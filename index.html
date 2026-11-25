@@ -116,7 +116,7 @@ textarea{width:100%;margin-top:12px;font:inherit;padding:10px;border-radius:12px
  <div class="nav"><button class="circ" id="prev" aria-label="Anterior">‹</button><div class="t" id="title"></div><button class="circ" id="next" aria-label="Siguiente">›</button></div>
  <div class="tools">
   <button class="pill" id="hoy">Hoy</button>
-  <label class="pill">Ir a: <input type="date" id="go" min="2027-01-01" max="2027-12-31"></label>
+  <label class="pill">Ir a: <input type="date" id="go" min="2026-12-01" max="2027-12-31"></label>
   <button class="pill" id="ics">Pasar al calendario del iPhone</button>
  </div>
  <div class="legend">
@@ -124,11 +124,13 @@ textarea{width:100%;margin-top:12px;font:inherit;padding:10px;border-radius:12px
  </div>
  <div id="view"></div>
  <div class="info" id="info"></div>
- <div class="foot">Fuente: Orden del Cuerpo 010/26 y cuadrante de servicios 2027 de la Policía Local de Torrox (23/11/2026). Las vacaciones y los asuntos propios los marcas tú tocando un día; se guardan solo en este aparato.</div>
+ <div class="foot">Fuente: Orden del Cuerpo 010/26 y cuadrante de servicios 2027 de la Policía Local de Torrox (23/11/2026). Diciembre de 2026: cuadrante de servicios de diciembre, fila del agente 305N. Las vacaciones y los asuntos propios los marcas tú tocando un día; se guardan solo en este aparato.</div>
 </main>
 <script>
 const MES={1:"MMTTNNDDDDDDMMTTNNDDDDDDMMTTNND",2:"DDDDDMMTTNNDDDDDDMMTTNNDDDDD",3:"DMMTTNNDDDDDDMMTTNNDDDDDDMMTTNN",4:"DDDDDDMMTTNNDDDDDDMMTTNNDDDDDD",5:"MMTTNNDDDDDDMMTTNNDDDDDDMMTTNND",6:"DDDDDMMTTNNDDDDDDMMTTNNDDDDDDM",7:"MTTNNDDDDDDMMTTNNDDDDDDMMTTNNDD",8:"DDDDMMTTNNDDDDDDMMTTNNDDDDDDMMT",9:"TNNDDDDDDMMTTNNDDDDDDMMTTNNDDD",10:"DDDMMTTNNDDDDDDMMTTNNDDDDDDMMTT",11:"NNDDDDDDMMTTNNDDDDDDMMTTNNDDDD",12:"DDMMTTNNDDDDDDMMTTNNDDDDDDMMTTN"};
-const SH={M:{n:"Mañana",h:"06:00 – 14:00",a:6,b:14,ic:"☀"},T:{n:"Tarde",h:"14:00 – 22:00",a:14,b:22,ic:"◐"},N:{n:"Noche",h:"22:00 – 06:00 (sales al día siguiente)",a:22,b:30,ic:"☾"},D:{n:"Descanso",h:"Libre",ic:"✓"}};
+const DIC26="NDDNNNDDDDDVVVVVVVDMDDDDNDTNNDD";
+const SH={M:{n:"Mañana",h:"06:00 – 14:00",a:6,b:14,ic:"☀"},T:{n:"Tarde",h:"14:00 – 22:00",a:14,b:22,ic:"◐"},N:{n:"Noche",h:"22:00 – 06:00 (sales al día siguiente)",a:22,b:30,ic:"☾"},D:{n:"Descanso",h:"Libre",ic:"✓"},V:{n:"Vacaciones",h:"Vacaciones (cuadrante)",ic:"✈"}};
+const LIB=s=>s==="D"||s==="V";
 const EXC=[["2027-01-01","Mañana de Año Nuevo"],["2027-08-11","Feria de El Morche"],["2027-08-12","Feria de El Morche"],["2027-08-13","Feria de El Morche"],["2027-08-14","Feria de El Morche"],["2027-08-15","Feria de El Morche"],["2027-09-29","Feria de Torrox"],["2027-09-30","Feria de Torrox"],["2027-10-01","Feria de Torrox"],["2027-10-02","Feria de Torrox"],["2027-10-03","Feria de Torrox"],["2027-12-24","Noche de Nochebuena"],["2027-12-25","Mañana de Navidad"],["2027-12-31","Noche de Nochevieja"]];
 const EX=Object.fromEntries(EXC);
 
@@ -141,12 +143,14 @@ const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+Stri
 const mk=(y,m,d)=>new Date(y,m,d,12);
 const add=(d,n)=>mk(d.getFullYear(),d.getMonth(),d.getDate()+n);
 const wd=d=>(d.getDay()+6)%7;
-function sh(d){if(d.getFullYear()!==2027)return null;return MES[d.getMonth()+1][d.getDate()-1]}
+function sh(d){if(d.getFullYear()===2026&&d.getMonth()===11)return DIC26[d.getDate()-1];if(d.getFullYear()!==2027)return null;return MES[d.getMonth()+1][d.getDate()-1]}
 function col(s){return{bg:`var(--${s}bg)`,fg:`var(--${s}fg)`,c:`var(--${s})`}}
 function mark(d){return marks[iso(d)]||{}}
 const real=new Date();
 let today=mk(real.getFullYear(),real.getMonth(),real.getDate());
-let cur=today.getFullYear()===2027?today:mk(2027,0,1);
+const INI=mk(2026,11,1),FIN=mk(2027,11,31);
+const enRango=d=>d>=INI&&d<=FIN;
+let cur=enRango(today)?today:INI;
 let view="mes";
 function fmt(d,o){return d.toLocaleDateString("es-ES",o||{weekday:"long",day:"numeric",month:"long"})}
 function nowCard(){
@@ -155,9 +159,9 @@ function nowCard(){
  const prev=add(base,-1),ps=sh(prev),hr=t.getHours()+t.getMinutes()/60;
  if(ps==="N"&&hr<6&&!mark(prev).t){return paint(el,"N","De servicio ahora","Noche · sales hoy a las 06:00","")}
  const s0=sh(base);
- if(s0&&s0!=="D"&&!mark(base).t&&hr>=SH[s0].a&&hr<SH[s0].b){return paint(el,s0,"De servicio ahora",SH[s0].n+" · sales a las "+String(SH[s0].b%24).padStart(2,"0")+":00","")}
- let d=base,y=d.getFullYear()<2027?mk(2027,0,1):d;
- for(let i=0;i<400;i++){const dd=add(y,i),s=sh(dd);if(!s)break;if(s==="D"||mark(dd).t)continue;
+ if(s0&&!LIB(s0)&&!mark(base).t&&hr>=SH[s0].a&&hr<SH[s0].b){return paint(el,s0,"De servicio ahora",SH[s0].n+" · sales a las "+String(SH[s0].b%24).padStart(2,"0")+":00","")}
+ let d=base,y=d<INI?INI:d;
+ for(let i=0;i<400;i++){const dd=add(y,i),s=sh(dd);if(!s)break;if(LIB(s)||mark(dd).t)continue;
   const st=new Date(dd.getFullYear(),dd.getMonth(),dd.getDate(),SH[s].a);if(st<=t)continue;
   const ms=st-t,dias=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5);
   const falta=dias>0?`faltan ${dias} día${dias>1?"s":""} y ${h} h`:`faltan ${h} h ${Math.floor(ms%36e5/6e4)} min`;
@@ -179,25 +183,25 @@ function render(){
   T.textContent=st.getDate()+" "+MS[st.getMonth()].slice(0,3)+" – "+en.getDate()+" "+MS[en.getMonth()].slice(0,3);
   let h=`<div class="cards ${n===3?"c3":"c7"}">`;for(let i=0;i<n;i++)h+=dayCard(add(st,i));V.innerHTML=h+"</div>"+(n===7?statsRange(st,7):"");bindCards()}
  else if(view==="mes"){T.textContent=MS[cur.getMonth()]+" "+cur.getFullYear();V.innerHTML=monthGrid(cur.getFullYear(),cur.getMonth())+statsRange(mk(cur.getFullYear(),cur.getMonth(),1),new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate());bindCells()}
- else{T.textContent="Año "+cur.getFullYear();V.innerHTML=yearGrid(cur.getFullYear());V.querySelectorAll(".ym").forEach(e=>e.onclick=()=>{cur=mk(2027,+e.dataset.m,1);view="mes";render()})}
+ else{const yy=cur.getFullYear();T.textContent=yy===2026?"Diciembre 2026":"Año "+yy;V.innerHTML=yearGrid(yy);V.querySelectorAll(".ym").forEach(e=>e.onclick=()=>{cur=mk(yy,+e.dataset.m,1);view="mes";render()})}
  info();nowCard()}
 function monthGrid(y,m){let h='<div class="month"><div class="grid">'+DC.map(x=>`<div class="wd">${x}</div>`).join("");
  const f=mk(y,m,1),nd=new Date(y,m+1,0).getDate();for(let i=0;i<wd(f);i++)h+='<div class="cell out"></div>';
  for(let d=1;d<=nd;d++){const dd=mk(y,m,d),s=sh(dd);if(!s){h+=`<div class="cell" style="background:var(--line)"><span class="n">${d}</span></div>`;continue}
   const mm=mark(dd),k=col(mm.t==="V"?"V":mm.t==="A"?"A":s);const lab=mm.t==="V"?"VAC":mm.t==="A"?"AP":s;
-  h+=`<div class="cell ${iso(dd)===iso(today)?"today":""}" style="background:${k.bg};color:${k.fg}" data-d="${iso(dd)}"><span class="n">${d}</span><span class="s">${lab}</span><span class="h">${mm.t?"":s==="D"?"libre":SH[s].h.slice(0,13)}</span>${mm.n?'<span class="dot" style="background:var(--fg)"></span>':""}${EX[iso(dd)]?'<span class="fl">⚑</span>':""}</div>`}
+  h+=`<div class="cell ${iso(dd)===iso(today)?"today":""}" style="background:${k.bg};color:${k.fg}" data-d="${iso(dd)}"><span class="n">${d}</span><span class="s">${lab}</span><span class="h">${mm.t?"":s==="D"?"libre":s==="V"?"vacaciones":SH[s].h.slice(0,13)}</span>${mm.n?'<span class="dot" style="background:var(--fg)"></span>':""}${EX[iso(dd)]?'<span class="fl">⚑</span>':""}</div>`}
  return h+"</div></div>"}
 function statsRange(st,n){const c={M:0,T:0,N:0,D:0,V:0,A:0};for(let i=0;i<n;i++){const d=add(st,i),s=sh(d);if(!s)continue;const m=mark(d);if(m.t)c[m.t]++;else c[s]++}
  const serv=c.M+c.T+c.N;return `<div class="stats"><div class="st" style="background:var(--Mbg);color:var(--Mfg)"><b>${c.M}</b><span>Mañanas</span></div><div class="st" style="background:var(--Tbg);color:var(--Tfg)"><b>${c.T}</b><span>Tardes</span></div><div class="st" style="background:var(--Nbg);color:var(--Nfg)"><b>${c.N}</b><span>Noches</span></div><div class="st" style="background:var(--Dbg);color:var(--Dfg)"><b>${c.D}</b><span>Descansos</span></div></div><div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="st"><b>${serv}</b><span>Servicios</span></div><div class="st"><b>${serv*8} h</b><span>Horas</span></div><div class="st"><b>${c.V+c.A}</b><span>Vac. / AP</span></div></div>`}
-function yearGrid(y){let h='<div class="year">';for(let m=0;m<12;m++){h+=`<div class="ym" data-m="${m}"><h4>${MS[m]}</h4><div class="grid">`+DC.map(x=>`<div class="c" style="color:var(--mut)">${x}</div>`).join("");
+function yearGrid(y){let h='<div class="year">';for(let m=(y===2026?11:0);m<12;m++){h+=`<div class="ym" data-m="${m}"><h4>${MS[m]}</h4><div class="grid">`+DC.map(x=>`<div class="c" style="color:var(--mut)">${x}</div>`).join("");
  const f=mk(y,m,1),nd=new Date(y,m+1,0).getDate();for(let i=0;i<wd(f);i++)h+='<div class="c"></div>';
  for(let d=1;d<=nd;d++){const dd=mk(y,m,d),s=sh(dd),mm=mark(dd),k=col(mm.t==="V"?"V":mm.t==="A"?"A":s);h+=`<div class="c" style="background:${k.bg};color:${k.fg};${iso(dd)===iso(today)?"outline:2px solid var(--head2)":""}">${d}</div>`}
- h+="</div></div>"}return h+"</div>"+statsRange(mk(2027,0,1),365)}
-function bigDay(d){const s=sh(d);if(!s)return '<div class="big empty">El cuadrante cargado es solo del año 2027.</div>';
+ h+="</div></div>"}return h+"</div>"+(y===2026?statsRange(INI,31):statsRange(mk(2027,0,1),365))}
+function bigDay(d){const s=sh(d);if(!s)return '<div class="big empty">El cuadrante cargado va de diciembre de 2026 a diciembre de 2027.</div>';
  const m=mark(d),k=col(s),ant=sh(add(d,-1)),sig=sh(add(d,1));
- let extra=s==="N"?"Entras a las 22:00 y sales el "+fmt(add(d,1))+" a las 06:00.":s==="D"?(ant==="N"?"Vienes de noche: sales esta mañana a las 06:00 y luego libras.":"Día libre."):"Turno de 8 horas.";
- let racha="";if(s==="D"){let i=0,j=0;while(sh(add(d,-(i+1)))==="D")i++;while(sh(add(d,j+1))==="D")j++;racha=`<p>Descanso ${i+1} de ${i+j+1} seguidos.</p>`}
- else{let k2=0;while(true){const q=sh(add(d,k2+1));if(!q||q==="D"||k2>12)break;k2++}let nx=1;while(sh(add(d,nx))&&sh(add(d,nx))!=="D")nx++;racha=`<p>Después de este te quedan ${k2} servicio${k2!==1?"s":""} hasta el próximo descanso.</p>`}
+ let extra=s==="N"?"Entras a las 22:00 y sales el "+fmt(add(d,1))+" a las 06:00.":s==="V"?"Vacaciones según el cuadrante de diciembre.":s==="D"?(ant==="N"?"Vienes de noche: sales esta mañana a las 06:00 y luego libras.":"Día libre."):"Turno de 8 horas.";
+ let racha="";if(s==="V")racha="";else if(s==="D"){let i=0,j=0;while(sh(add(d,-(i+1)))==="D")i++;while(sh(add(d,j+1))==="D")j++;racha=`<p>Descanso ${i+1} de ${i+j+1} seguidos.</p>`}
+ else{let k2=0;while(true){const q=sh(add(d,k2+1));if(!q||LIB(q)||k2>12)break;k2++}let nx=1;while(sh(add(d,nx))&&!LIB(sh(add(d,nx))))nx++;racha=`<p>Después de este te quedan ${k2} servicio${k2!==1?"s":""} hasta el próximo descanso.</p>`}
  return `<div class="big" style="background:${k.bg}"><div class="sh"><div class="ic" style="background:${k.c};color:#fff">${SH[s].ic}</div><div><h2 style="color:${k.fg}">${SH[s].n}</h2><div class="hr">${SH[s].h}</div></div></div>
  <p>${extra}</p>${racha}<p>Ayer: ${ant?SH[ant].n:"—"} · Mañana: ${sig?SH[sig].n:"—"}</p>${tagsFor(d)}
  <div class="acts"><button data-t="V" class="${m.t==="V"?"sel":""}" style="color:var(--V)">Vacaciones</button><button data-t="A" class="${m.t==="A"?"sel":""}" style="color:var(--A)">Asunto propio</button><button data-t="" style="color:var(--mut)">Quitar marca</button></div>
@@ -206,7 +210,7 @@ function bindDay(){const k=iso(cur);document.querySelectorAll(".acts button").fo
  const ta=document.getElementById("nota");if(ta)ta.onchange=()=>{const m=marks[k]||{};if(ta.value.trim())m.n=ta.value.trim();else delete m.n;marks[k]=m;if(!m.t&&!m.n)delete marks[k];save();info()}}
 function bindCards(){document.querySelectorAll(".dc[data-d]").forEach(e=>e.onclick=()=>{const p=e.dataset.d.split("-");cur=mk(+p[0],+p[1]-1,+p[2]);view="dia";render()})}
 function bindCells(){document.querySelectorAll(".cell[data-d]").forEach(e=>e.onclick=()=>{const p=e.dataset.d.split("-");cur=mk(+p[0],+p[1]-1,+p[2]);view="dia";render()})}
-function info(){let v=0,a=0;for(const k in marks){if(marks[k].t==="V")v++;if(marks[k].t==="A")a++}
+function info(){let v=0,a=0;for(const k in marks){if(!k.startsWith("2027"))continue;if(marks[k].t==="V")v++;if(marks[k].t==="A")a++}
  let tot=0;for(let i=0;i<365;i++){const d=add(mk(2027,0,1),i);if(sh(d)!=="D")tot++}
  document.getElementById("info").innerHTML=`<h3>Tu año 2027</h3>
  <div>Vacaciones marcadas: <b>${v}</b> de 22 días</div><div class="bar"><i style="width:${Math.min(100,v/22*100)}%;background:var(--V)"></i></div>
@@ -215,9 +219,9 @@ function info(){let v=0,a=0;for(const k in marks){if(marks[k].t==="V")v++;if(mar
   <h3 style="margin-top:14px">Días sin vacaciones</h3><ul><li>Mañana de Año Nuevo (1 ene)</li><li>Feria de El Morche (11–15 ago)</li><li>Feria de Torrox (29 sep – 3 oct)</li><li>Noche de Nochebuena (24 dic), mañana de Navidad (25 dic), noche de Nochevieja (31 dic)</li></ul>
  <p style="color:var(--mut);margin:10px 0 0">El cronograma de vacaciones del grupo se entrega antes del 29 de diciembre. Los asuntos propios se piden por Cronos.</p>`}
 function move(n){if(view==="dia")cur=add(cur,n);else if(view==="tres")cur=add(cur,3*n);else if(view==="semana")cur=add(cur,7*n);else if(view==="mes")cur=mk(cur.getFullYear(),cur.getMonth()+n,1);else return;
- if(cur<mk(2027,0,1))cur=mk(2027,0,1);if(cur>mk(2027,11,31))cur=mk(2027,11,31);render()}
+ if(cur<INI)cur=INI;if(cur>FIN)cur=FIN;render()}
 document.getElementById("prev").onclick=()=>move(-1);document.getElementById("next").onclick=()=>move(1);
-document.getElementById("hoy").onclick=()=>{cur=today.getFullYear()===2027?today:mk(2027,0,1);render()};
+document.getElementById("hoy").onclick=()=>{cur=enRango(today)?today:INI;render()};
 document.getElementById("go").onchange=e=>{if(!e.target.value)return;const p=e.target.value.split("-");cur=mk(+p[0],+p[1]-1,+p[2]);view="dia";render()};
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});
 let tx=null,ty=null;const vw=document.getElementById("view");
